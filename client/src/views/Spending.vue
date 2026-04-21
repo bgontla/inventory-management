@@ -199,7 +199,7 @@ export default {
     const selectedCostData = ref(null)
 
     // Use shared filters
-    const { selectedPeriod, getCurrentFilters } = useFilters()
+    const { selectedPeriod, selectedLocation, selectedCategory, selectedStatus, getCurrentFilters } = useFilters()
 
     // Monthly spending chart always shows all months (not filtered)
     const monthlySpending = computed(() => {
@@ -354,8 +354,8 @@ export default {
           api.getSpendingSummary(),
           api.getMonthlySpending(),
           api.getCategorySpending(),
-          api.getTransactions(),
-          api.getOrders()
+          api.getTransactions(getCurrentFilters()),
+          api.getOrders(getCurrentFilters())
         ])
 
         summaryData.value = summaryRes
@@ -370,10 +370,8 @@ export default {
       }
     }
 
-    // Watch for period filter changes
-    watch([selectedPeriod], () => {
-      // Data will automatically update via computed properties
-    })
+    // Watch for filter changes and reload filterable data
+    watch([selectedPeriod, selectedLocation, selectedCategory, selectedStatus], loadData)
 
     const formatCurrency = (value) => {
       return formatCurrencyUtil(value, currentCurrency.value)

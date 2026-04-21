@@ -122,38 +122,22 @@ export default {
     const { t } = useI18n()
     const loading = ref(true)
     const error = ref(null)
-    const allForecasts = ref([])
-    const inventoryItems = ref([])
+    const forecasts = ref([])
 
     // Use shared filters
     const { selectedLocation, selectedCategory, getCurrentFilters } = useFilters()
-
-    // Filter forecasts based on inventory filters
-    const forecasts = computed(() => {
-      if (selectedLocation.value === 'all' && selectedCategory.value === 'all') {
-        return allForecasts.value
-      }
-
-      // Get SKUs of items that match the filters
-      const validSkus = new Set(inventoryItems.value.map(item => item.sku))
-      return allForecasts.value.filter(f => validSkus.has(f.item_sku))
-    })
 
     const loadForecasts = async () => {
       try {
         loading.value = true
         const filters = getCurrentFilters()
 
-        const [forecastsData, inventoryData] = await Promise.all([
-          api.getDemandForecasts(),
-          api.getInventory({
-            warehouse: filters.warehouse,
-            category: filters.category
-          })
-        ])
+        const forecastsData = await api.getDemandForecasts({
+          warehouse: filters.warehouse,
+          category: filters.category
+        })
 
-        allForecasts.value = forecastsData
-        inventoryItems.value = inventoryData
+        forecasts.value = forecastsData
       } catch (err) {
         error.value = 'Failed to load demand forecasts: ' + err.message
       } finally {
@@ -162,9 +146,7 @@ export default {
     }
 
     // Watch for filter changes and reload data
-    watch([selectedLocation, selectedCategory], () => {
-      loadForecasts()
-    })
+    watch([selectedLocation, selectedCategory], loadForecasts)
 
     const getForecastsByTrend = (trend) => {
       return forecasts.value.filter(f => f.trend === trend)
